@@ -1,0 +1,38 @@
+# Build outputs
+dist/
+src-tauri/target/
+src-tauri/gen/
+
+# Node
+node_modules/
+package-lock.json
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Secrets (keys live in ~/.friday/, never in repo)
+.env
+.env.local
+*.key
+*-key
+secrets/
+**/anthropic-key
+**/bedrock-key
+**/lemonfox-key
+
+# Local logs / runtime
+*.log
+logs/
+position.json
+history.json
+
+# Rust
+**/*.rs.bk
+
+# macOS bundle artifacts
+*.dmg
+*.app
