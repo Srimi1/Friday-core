@@ -1,8 +1,8 @@
 [package]
-name = "friday-core"
+name = "veronica"
 version = "1.0.0"
-description = "FRIDAY Core — Futuristic AI desktop companion widget"
-authors = ["FRIDAY Team"]
+description = "Veronica — AI desktop companion. Friday Core runtime + Project Friday phases."
+authors = ["Veronica Team"]
 license = "MIT"
 repository = ""
 edition = "2021"
