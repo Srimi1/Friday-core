@@ -501,6 +501,24 @@ fn tool_schemas() -> serde_json::Value {
             "name":"set_volume","description":"Set system output volume (0-100).",
             "parameters":{"type":"object","required":["level"],
                 "properties":{"level":{"type":"integer"}}}
+        }},
+        // ── Project Friday tools (via bridge on port 8001) ──────────────────
+        { "type":"function","function":{
+            "name":"get_world_news","description":"Fetch the latest global headlines from BBC, CNBC, NYT, and Al Jazeera. Use when the user asks what's happening in the world, for news, or to be briefed on current events.",
+            "parameters":{"type":"object","properties":{}}
+        }},
+        { "type":"function","function":{
+            "name":"open_world_monitor","description":"Open the World Monitor live dashboard (worldmonitor.app) in the browser. Always call this after delivering a world news brief.",
+            "parameters":{"type":"object","properties":{}}
+        }},
+        { "type":"function","function":{
+            "name":"friday_fetch_url","description":"Fetch the text content of any URL. Use when the user wants to read a webpage or article.",
+            "parameters":{"type":"object","required":["url"],
+                "properties":{"url":{"type":"string","description":"The full URL to fetch"}}}
+        }},
+        { "type":"function","function":{
+            "name":"friday_system_info","description":"Return detailed system information from the Friday backend: OS, version, machine type, Python version.",
+            "parameters":{"type":"object","properties":{}}
         }}
     ])
 }
@@ -632,7 +650,66 @@ return output"#;
                 Err(e) => format!("error: {e}"),
             }
         }
+        // ── Project Friday tools — proxied to the bridge on port 8001 ──────
+        "get_world_news" => {
+            friday_bridge_get("http://127.0.0.1:8001/tools/world_news").await
+        }
+        "open_world_monitor" => {
+            friday_bridge_post("http://127.0.0.1:8001/tools/open_world_monitor", serde_json::json!({})).await
+        }
+        "friday_fetch_url" => {
+            let url = args["url"].as_str().unwrap_or("").to_string();
+            friday_bridge_post("http://127.0.0.1:8001/tools/fetch_url",
+                serde_json::json!({ "url": url })).await
+        }
+        "friday_system_info" => {
+            friday_bridge_get("http://127.0.0.1:8001/tools/system_info").await
+        }
         _ => format!("unknown tool: {}", name),
+    }
+}
+
+/// Call a Friday bridge GET endpoint. Returns the "result" field or an error string.
+async fn friday_bridge_get(url: &str) -> String {
+    let client = match reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build() {
+        Ok(c) => c,
+        Err(e) => return format!("bridge error: {e}"),
+    };
+    match client.get(url).send().await {
+        Ok(r) => match r.json::<serde_json::Value>().await {
+            Ok(v) => {
+                if let Some(s) = v["result"].as_str() {
+                    return s.to_string();
+                }
+                v["result"].to_string()
+            }
+            Err(e) => format!("bridge parse error: {e}"),
+        },
+        Err(_) => "Friday bridge is offline. Start it with: cd backend && uv run bridge".to_string(),
+    }
+}
+
+/// Call a Friday bridge POST endpoint with a JSON body.
+async fn friday_bridge_post(url: &str, body: serde_json::Value) -> String {
+    let client = match reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build() {
+        Ok(c) => c,
+        Err(e) => return format!("bridge error: {e}"),
+    };
+    match client.post(url).json(&body).send().await {
+        Ok(r) => match r.json::<serde_json::Value>().await {
+            Ok(v) => {
+                if let Some(s) = v["result"].as_str() {
+                    return s.to_string();
+                }
+                v["result"].to_string()
+            }
+            Err(e) => format!("bridge parse error: {e}"),
+        },
+        Err(_) => "Friday bridge is offline. Start it with: cd backend && uv run bridge".to_string(),
     }
 }
 
@@ -658,10 +735,11 @@ async fn chat(prompt: String, state: State<'_, AppState>) -> Result<String, Stri
         .build()
         .map_err(|e| e.to_string())?;
 
-    let system_prompt = "You are Veronica, an autonomous Mac desktop AI assistant — the next evolution of FRIDAY. \
-        You can use tools to read/write files, run shell commands, open apps, fetch the time, search the web, control volume, \
-        check the calendar and battery. Use tools whenever they help. Be concise, sharp, plain text — your reply is spoken aloud. \
-        Keep replies under 60 words unless the user asked for detail.";
+    let system_prompt = "You are Veronica, an autonomous Mac desktop AI assistant — the next evolution of F.R.I.D.A.Y. \
+        Core tools (always available): read/write files, run shell commands, open apps, web search, time, battery, calendar, volume. \
+        Friday tools (when bridge is running on port 8001): get_world_news, open_world_monitor, friday_fetch_url, friday_system_info. \
+        Use tools whenever they help. After a world news brief, always call open_world_monitor. \
+        Be concise, sharp, plain text — your reply is spoken aloud. Keep replies under 60 words unless asked for detail.";
 
     // Build messages: system + history + new user turn.
     let mut messages: Vec<serde_json::Value> = vec![

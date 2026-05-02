@@ -15,6 +15,9 @@ import { actions, registerExtension } from './actions.js';
 import { VeronicaAPI } from './veronica/veronica-api.js';
 import { initPhases, destroyAllPhases, listPhases, registerPhase } from './veronica/phase-registry.js';
 
+// Load Project Friday integration phase — registers itself via registerPhase()
+import './veronica/phases/friday-phase.js';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
