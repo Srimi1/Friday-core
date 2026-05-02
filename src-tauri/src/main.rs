@@ -200,7 +200,7 @@ const MENU_ID_QUIT: &str = "quit";
 ///   Quit
 fn setup_tray(app: &AppHandle) -> Result<(), String> {
     // ── Build individual menu items ─────────────────────────────
-    let title_item = MenuItemBuilder::new("FRIDAY Core")
+    let title_item = MenuItemBuilder::new("Veronica")
         .enabled(false)
         .build(app)
         .map_err(|e| format!("Failed to build title menu item: {e}"))?;
@@ -238,7 +238,7 @@ fn setup_tray(app: &AppHandle) -> Result<(), String> {
 
     // ── Build the tray icon ─────────────────────────────────────
     let tray = TrayIconBuilder::new()
-        .tooltip("FRIDAY Core")
+        .tooltip("Veronica")
         .icon_as_template(true)
         .menu(&menu)
         .show_menu_on_left_click(true)
@@ -282,7 +282,7 @@ fn handle_tray_menu_click(app: &AppHandle, menu_id: &str) {
                 let app_clone = app.clone();
                 tauri::async_runtime::spawn(async move {
                     if let Err(e) = reset_position(window).await {
-                        eprintln!("[FRIDAY Core] Tray reset failed: {e}");
+                        eprintln!("[Veronica] Tray reset failed: {e}");
                         return;
                     }
                     // Save the new centered position
@@ -415,7 +415,7 @@ fn start_passthrough_watcher(app: AppHandle) {
                 if window.set_ignore_cursor_events(want).is_ok() {
                     current_passthrough = Some(want);
                     eprintln!(
-                        "[FRIDAY] passthrough={} mouse=({:.0},{:.0}) widget=({:.0},{:.0}) r={:.0}",
+                        "[Veronica] passthrough={} mouse=({:.0},{:.0}) widget=({:.0},{:.0}) r={:.0}",
                         want, mouse_x, mouse_y, cx_widget, cy_widget, radius
                     );
                 }
@@ -423,7 +423,7 @@ fn start_passthrough_watcher(app: AppHandle) {
             tick = tick.wrapping_add(1);
             if tick % 90 == 0 {
                 eprintln!(
-                    "[FRIDAY] watcher alive tick={} mouse=({:.0},{:.0}) inside={}",
+                    "[Veronica] watcher alive tick={} mouse=({:.0},{:.0}) inside={}",
                     tick, mouse_x, mouse_y, inside
                 );
             }
@@ -658,9 +658,9 @@ async fn chat(prompt: String, state: State<'_, AppState>) -> Result<String, Stri
         .build()
         .map_err(|e| e.to_string())?;
 
-    let system_prompt = "You are FRIDAY, an autonomous Mac desktop AI assistant in the style of Tony Stark's FRIDAY. \
+    let system_prompt = "You are Veronica, an autonomous Mac desktop AI assistant — the next evolution of FRIDAY. \
         You can use tools to read/write files, run shell commands, open apps, fetch the time, search the web, control volume, \
-        check the calendar and battery. Use tools whenever they help. Be concise, witty, plain text — your reply is spoken aloud. \
+        check the calendar and battery. Use tools whenever they help. Be concise, sharp, plain text — your reply is spoken aloud. \
         Keep replies under 60 words unless the user asked for detail.";
 
     // Build messages: system + history + new user turn.
@@ -769,7 +769,7 @@ async fn chat_remote(prompt: String) -> Result<String, String> {
         .timeout(std::time::Duration::from_secs(60))
         .build()
         .map_err(|e| e.to_string())?;
-    let system_prompt = "You are FRIDAY. Reply in 1-3 sentences, plain text.";
+    let system_prompt = "You are Veronica. Reply in 1-3 sentences, plain text.";
 
     if let Some(key) = read_key("anthropic-key") {
         let body = serde_json::json!({
@@ -986,7 +986,7 @@ fn which_bin(name: &str) -> Option<String> {
 fn ask_user_text(title: &str) -> Result<String, String> {
     let script = format!(
         r#"try
-  set theResp to display dialog "{}" default answer "" with title "FRIDAY" with icon note buttons {{"Cancel","Send"}} default button "Send"
+  set theResp to display dialog "{}" default answer "" with title "Veronica" with icon note buttons {{"Cancel","Send"}} default button "Send"
   return text returned of theResp
 on error
   return ""
@@ -1057,7 +1057,7 @@ async fn start_chat(app: AppHandle, state: State<'_, AppState>) -> Result<(), St
             let err_msg = e.replace('"', "'");
             let trimmed: String = err_msg.chars().take(400).collect();
             let script = format!(
-                r#"display dialog "FRIDAY chat failed:\n\n{}" with title "FRIDAY Error" buttons {{"OK"}} default button "OK""#,
+                r#"display dialog "Veronica chat failed:\n\n{}" with title "Veronica Error" buttons {{"OK"}} default button "OK""#,
                 trimmed
             );
             let _ = std::process::Command::new("osascript").arg("-e").arg(&script).status();
@@ -1128,17 +1128,17 @@ fn main() {
         .setup(|app| {
             // 1. System tray
             if let Err(e) = setup_tray(app.handle()) {
-                eprintln!("[FRIDAY Core] Tray setup warning: {e}");
+                eprintln!("[Veronica] Tray setup warning: {e}");
             }
 
             // 2. Global shortcut (Cmd+Shift+L)
             if let Err(e) = setup_global_shortcut(app.handle()) {
-                eprintln!("[FRIDAY Core] Shortcut setup warning: {e}");
+                eprintln!("[Veronica] Shortcut setup warning: {e}");
             }
 
             // 3. Restore saved window position
             if let Err(e) = restore_window_position(app.handle()) {
-                eprintln!("[FRIDAY Core] Position restore warning: {e}");
+                eprintln!("[Veronica] Position restore warning: {e}");
             }
 
             // 4. Click-through outside the circular widget bounds
@@ -1163,5 +1163,5 @@ fn main() {
         ])
         // ── Run ───────────────────────────────────────────────────
         .run(tauri::generate_context!())
-        .expect("error while running FRIDAY Core");
+        .expect("error while running Veronica");
 }

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2.0.0",
-  "productName": "FRIDAY Core",
+  "productName": "Veronica",
   "version": "1.0.0",
-  "identifier": "com.friday.core",
+  "identifier": "com.veronica.app",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "FRIDAY Core",
+        "title": "Veronica",
         "width": 140,
         "height": 140,
         "resizable": false,
