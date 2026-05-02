@@ -14,7 +14,7 @@ npm-debug.log*
 .idea/
 *.swp
 
-# Secrets (keys live in ~/.friday/, never in repo)
+# Secrets (keys live in ~/.friday/ or backend/.env, never in repo)
 .env
 .env.local
 *.key
@@ -23,6 +23,15 @@ secrets/
 **/anthropic-key
 **/bedrock-key
 **/lemonfox-key
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+backend/.venv/
+backend/uv.lock
+*.egg-info/
 
 # Local logs / runtime
 *.log
