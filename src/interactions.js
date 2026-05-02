@@ -1,4 +1,4 @@
-// Interaction handler for FRIDAY Core
+// Interaction handler for Veronica
 // Handles: click, hover, drag, context menu, keyboard shortcuts
 // Bridges all user input to the state machine and Tauri backend.
 
@@ -200,7 +200,7 @@ export class InteractionHandler {
 
     // Click → start a chat conversation (LISTENING → THINKING → SPEAKING)
     this._invoke('start_chat').catch((err) => {
-      console.error('[FRIDAY] chat error:', err);
+      console.error('[Veronica] chat error:', err);
     });
   }
 
@@ -218,7 +218,7 @@ export class InteractionHandler {
     if (!menu) return;
 
     menu.innerHTML = `
-      <div class="menu-item disabled">FRIDAY Core v1.0</div>
+      <div class="menu-item disabled">Veronica v1.0</div>
       <div class="menu-separator"></div>
       <div class="menu-item" data-action="toggle-lock">
         ${this.locked ? '\uD83D\uDD13 Unlock Position' : '\uD83D\uDD12 Lock Position'}
@@ -291,7 +291,7 @@ export class InteractionHandler {
         this.quit();
         break;
       default:
-        console.warn('[FRIDAY] Unknown menu action:', action);
+        console.warn('[Veronica] Unknown menu action:', action);
     }
   }
 
@@ -326,7 +326,7 @@ export class InteractionHandler {
       const pos = await this._invoke('load_position');
       if (pos) return pos;
     } catch (e) {
-      console.warn('[FRIDAY] Could not get position:', e);
+      console.warn('[Veronica] Could not get position:', e);
     }
     return [0, 0];
   }
@@ -335,7 +335,7 @@ export class InteractionHandler {
     try {
       await this._invoke('save_position', { x, y });
     } catch (e) {
-      console.warn('[FRIDAY] Could not save position:', e);
+      console.warn('[Veronica] Could not save position:', e);
     }
   }
 
@@ -343,7 +343,7 @@ export class InteractionHandler {
     try {
       await this._invoke('update_drag_position', { x, y });
     } catch (e) {
-      console.warn('[FRIDAY] Could not update drag position:', e);
+      console.warn('[Veronica] Could not update drag position:', e);
     }
   }
 
@@ -353,7 +353,7 @@ export class InteractionHandler {
       // toggle_lock returns the new locked state; fall back to local toggle
       this.setLocked(locked !== null ? locked : !this.locked);
     } catch (e) {
-      console.warn('[FRIDAY] Could not toggle lock:', e);
+      console.warn('[Veronica] Could not toggle lock:', e);
       // Local-only fallback
       this.setLocked(!this.locked);
     }
@@ -363,7 +363,7 @@ export class InteractionHandler {
     try {
       await this._invoke('reset_position');
     } catch (e) {
-      console.warn('[FRIDAY] Could not reset position:', e);
+      console.warn('[Veronica] Could not reset position:', e);
     }
   }
 
@@ -372,7 +372,7 @@ export class InteractionHandler {
       const locked = await this._invoke('is_locked');
       if (locked !== null) this.setLocked(locked);
     } catch (e) {
-      console.warn('[FRIDAY] Could not load lock state:', e);
+      console.warn('[Veronica] Could not load lock state:', e);
     }
   }
 
@@ -380,7 +380,7 @@ export class InteractionHandler {
     try {
       this._invoke('quit_app');
     } catch (e) {
-      console.warn('[FRIDAY] Could not quit via Tauri:', e);
+      console.warn('[Veronica] Could not quit via Tauri:', e);
       // Fallback for browser dev mode
       window.close();
     }
