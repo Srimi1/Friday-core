@@ -12,6 +12,8 @@ import { createRenderer } from './renderer.js';
 import { StateMachine, STATES } from './state-machine.js';
 import { InteractionHandler } from './interactions.js';
 import { actions, registerExtension } from './actions.js';
+import { VeronicaAPI } from './veronica/veronica-api.js';
+import { initPhases, destroyAllPhases, listPhases, registerPhase } from './veronica/phase-registry.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -53,14 +55,14 @@ function updateLockIndicator(locked) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function init() {
-  console.log('[FRIDAY Core] Initializing...');
+  console.log('[Veronica] Initializing...');
 
   // ── DOM validation ─────────────────────────────────────────────────
   const canvas = document.getElementById('friday-canvas');
   const appEl = document.getElementById('app');
 
   if (!canvas || !appEl) {
-    console.error('[FRIDAY Core] Required DOM elements missing (friday-canvas or app)');
+    console.error('[Veronica] Required DOM elements missing (friday-canvas or app)');
     return;
   }
 
@@ -70,7 +72,7 @@ async function init() {
 
   // ── State Machine ──────────────────────────────────────────────────
   const stateMachine = new StateMachine(renderer, (newState, config) => {
-    console.log(`[FRIDAY Core] State → ${newState}`);
+    console.log(`[Veronica] State → ${newState}`);
   });
 
   // ── Interactions ───────────────────────────────────────────────────
@@ -84,7 +86,7 @@ async function init() {
       updateLockIndicator(locked);
     }
   } catch (e) {
-    console.warn('[FRIDAY Core] Could not load lock state:', e);
+    console.warn('[Veronica] Could not load lock state:', e);
   }
 
   // ── Tauri Event Listeners ─────────────────────────────────────────
@@ -131,14 +133,25 @@ async function init() {
   // ── Set initial state ─────────────────────────────────────────────
   stateMachine.transition(STATES.IDLE);
 
+  // ── Veronica Phase Layer ──────────────────────────────────────────
+  // Build the stable API surface that Project Friday phases consume.
+  // Phases never import Friday Core internals — only VeronicaAPI.
+  const veronicaAPI = new VeronicaAPI({ stateMachine, renderer, invoke });
+
+  // Initialize all phases that were registered before boot
+  // (Project Friday phases call registerPhase() at module load time).
+  await initPhases(veronicaAPI);
+
   // ── Cleanup on unload ─────────────────────────────────────────────
   window.addEventListener('beforeunload', () => {
+    destroyAllPhases();
     renderer.stop();
     stateMachine.destroy();
     interactions.destroy();
   });
 
-  // ── Expose debug API ──────────────────────────────────────────────
+  // ── Expose debug APIs ─────────────────────────────────────────────
+  // window.FRIDAY — unchanged for backwards compatibility with existing tooling
   window.FRIDAY = {
     version: '1.0.0',
     stateMachine,
@@ -151,10 +164,8 @@ async function init() {
     cycle: () => stateMachine.cycle(),
     invoke,
     isTauri,
-    // Extension API for future modules
     registerExtension,
     extensions: () => {
-      // Import and return if available
       try {
         const ext = import('./actions.js');
         return ext.then(m => m.listExtensions?.() || []);
@@ -162,8 +173,18 @@ async function init() {
     }
   };
 
-  console.log('[FRIDAY Core] Ready. Click widget to cycle states. Right-click for menu.');
-  console.log('[FRIDAY Core] Debug: window.FRIDAY exposes all modules.');
+  // window.VERONICA — public surface for Project Friday phases and tooling
+  window.VERONICA = {
+    version: veronicaAPI.version,
+    api: veronicaAPI,
+    // Register a phase at runtime (after boot, for dev/testing)
+    registerPhase,
+    // List all registered phases and their statuses
+    phases: () => listPhases(),
+  };
+
+  console.log('[Veronica] Ready. Friday Core online. Project Friday phases loaded:', listPhases().length);
+  console.log('[Veronica] Debug: window.VERONICA · window.FRIDAY');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
